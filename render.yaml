@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: sms-campaign-webhook
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: WEBHOOK_TOKEN
+        generateValue: true
