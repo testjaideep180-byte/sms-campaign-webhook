@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from datetime import datetime, timezone
 from collections import deque
 import os
+import hmac
 
 app = Flask(__name__)
 reports = deque(maxlen=100)
@@ -12,7 +13,17 @@ def health():
 
 @app.post("/webhook")
 def webhook():
-    if request.headers.get("X-Webhook-Token") != os.environ.get("WEBHOOK_TOKEN"):
+    expected_token = os.environ.get("WEBHOOK_TOKEN")
+
+    if not expected_token:
+        return jsonify({"error": "Server configuration error"}), 500
+
+    provided_token = (
+        request.headers.get("X-Webhook-Token")
+        or request.args.get("token", "")
+    )
+
+    if not hmac.compare_digest(provided_token, expected_token):
         return jsonify({"error": "Unauthorized"}), 401
 
     payload = request.get_json(silent=True)
