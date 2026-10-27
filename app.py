@@ -46,6 +46,27 @@ def get_reports():
         return jsonify({"error": "Unauthorized"}), 401
 
     return jsonify(list(reports))
+    
+@app.delete("/reports")
+def clear_reports():
+    expected_token = os.environ.get("WEBHOOK_TOKEN")
 
+    if not expected_token:
+        return jsonify({"error": "Server configuration error"}), 500
+
+    provided_token = request.headers.get("X-Webhook-Token", "")
+
+    if not hmac.compare_digest(provided_token, expected_token):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    deleted_count = len(reports)
+    reports.clear()
+
+    return jsonify({
+        "status": "success",
+        "message": "All previous reports cleared",
+        "deleted_count": deleted_count
+    }), 200
+    
 if __name__ == "__main__":
     app.run()
